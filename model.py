@@ -133,8 +133,36 @@ def make_activation(kind='relu'):
         'backward': backward
     }
 
-# Step 5 - initialize_weights (not yet solved)
-# TODO: implement
+# Step 5 - initialize_weights
+def initialize_weights(in_dim, out_dim, scheme='he'):
+    """Return (W, b) for a dense layer.
+
+    Inputs:
+      in_dim: int fan-in
+      out_dim: int fan-out
+      scheme: str initialization family (default 'he')
+
+    Returns:
+      W: np.ndarray shape (in_dim, out_dim), finite, symmetry-breaking,
+         scale stable with depth (fan-in dependent)
+      b: np.ndarray shape (out_dim,), near zero
+    """
+    # TODO: your approach here
+    """
+    The goal is to ensure that:
+      - Different neurons start with different weights.
+      - Weights aren't all zero.
+      - Weight values are scaled appropriately so signals don't vanish or explode as they pass through layers.
+    """   
+    if scheme=='he':
+      W = np.random.randn(in_dim,out_dim) * np.sqrt(2.0/ in_dim) 
+      #he intilization for relu
+    else:
+       W = np.random.randn(in_dim, out_dim) * np.sqrt(1.0 / in_dim)  # Alternative fan-in scaling
+
+    b = np.zeros(out_dim) # biases to 0
+
+    return W,b
 
 # Step 6 - make_loss (not yet solved)
 # TODO: implement
