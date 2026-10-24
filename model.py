@@ -124,7 +124,7 @@ def make_activation(kind='relu'):
 
     def backward(dout,cache):
       x= cache
-      dx = dout *(x>=0) # pass grads where input is non negative
+      dx = dout *(x>0) # pass grads where input is non negative
       return dx,{}
 
     return {
@@ -255,8 +255,30 @@ def make_sequential(layers):
       "params" : params
     }
 
-# Step 8 - forward_backward (not yet solved)
-# TODO: implement
+# Step 8 - forward_backward
+def forward_backward(model, loss_fn, x, y):
+    """Run one full forward-backward sweep on a batch.
+
+    Inputs:
+      model: sequential dict with 'forward', 'backward', 'params'
+             model['forward'](x) -> (logits, caches)
+             model['backward'](d_logits, caches) -> (dx, param_grads)
+      loss_fn: callable (logits, y) -> (loss, d_logits)
+      x: np.ndarray (batch, in_dim)
+      y: np.ndarray (batch,) integer labels
+
+    Returns:
+      loss: float, scalar batch loss
+      param_grads: nested np.ndarrays matching model['params'] layout
+                   (gradients of loss w.r.t. every parameter)
+    """
+    #this does one complete forward and backward pass for a batch
+    logits , caches = model["forward"](x) #model run forward
+
+    loss, d_logits = loss_fn(logits,y) # calc loss 
+
+    dx , param_grads = model["backward"](d_logits,caches)#backprop
+    return float(loss), param_grads
 
 # Step 9 - make_optimizer (not yet solved)
 # TODO: implement
