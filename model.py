@@ -164,8 +164,45 @@ def initialize_weights(in_dim, out_dim, scheme='he'):
 
     return W,b
 
-# Step 6 - make_loss (not yet solved)
-# TODO: implement
+# Step 6 - make_loss
+def make_loss(kind='cross_entropy'):
+    """Return a classification loss_fn(logits, labels) -> (loss, d_logits).
+
+    Inputs to loss_fn:
+      logits: (batch, C) float array of raw class scores
+      labels: (batch,) int array of class indices in [0, C)
+    Outputs:
+      loss: Python float, mean scalar loss over the batch (finite)
+      d_logits: (batch, C) gradient of loss w.r.t. logits (finite)
+    Must pass gradient_check, be minimized by confident correct predictions,
+    and stay finite under saturated logits.
+    """
+
+    def loss_fn(logits,y_true):
+
+      shifted = logits - np.max(logits, axis=1 , keepdims=True)
+      #we do this so exp doesnt overflow
+      #now convert shifted logits to probab using softmax
+      exp_logits = np.exp(shifted)
+      sum_exp = np.sum(exp_logits, axis=1, keepdims=True)
+      probs = exp_logits/sum_exp
+
+      #select logit of the correct class 
+      correct_logits = logits[np.arange(len(y_true)), y_true]
+
+      #loss
+      log_sum_exp = np.log(sum_exp.ravel()) + np.max(logits, axis=1)
+      loss = np.mean(log_sum_exp-correct_logits)
+
+      #gradient of cross-entropy loss with respect to the logits
+      n = len(y_true)
+      d_logits = probs.copy()
+      d_logits[np.arange(n), y_true] -= 1
+      d_logits /= n
+
+      return float(loss), d_logits
+
+    return loss_fn
 
 # Step 7 - make_sequential (not yet solved)
 # TODO: implement
