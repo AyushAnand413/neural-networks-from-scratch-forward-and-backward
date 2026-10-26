@@ -394,8 +394,92 @@ def train(model, loss_fn, optimizer, x, y, epochs, batch_size, seed=0):
 
     return history
 
-# Step 12 - design_network (not yet solved)
-# TODO: implement
+# Step 12 - design_network
+def design_network(input_dim, num_classes, seed=0):
+    """Design and train a net that solves a nonlinear classification task.
+
+    Inputs:
+      input_dim: int, feature dimension
+      num_classes: int, number of classes
+      seed: int, RNG seed for reproducibility
+
+    Returns:
+      model: trained sequential model (forward/backward/params)
+      metrics: dict with
+        'accuracy': float >= 0.90 on an evaluation set,
+        'x': np.ndarray (N, input_dim) eval features (N >= 50),
+        'y': np.ndarray (N,) integer eval labels.
+      The eval set (x, y) must not be linearly separable to high accuracy
+      (< 0.82 for a linear classifier), and the model's true accuracy on
+      it must match metrics['accuracy'] and be >= 0.90.
+    """
+    if input_dim < 2 or num_classes < 2:
+        raise ValueError("input_dim and num_classes must be at least 2")
+
+    # Generate a nonlinear concentric-rings dataset
+    rng = np.random.RandomState(seed)
+    n_samples = 400
+    half = n_samples // 2
+
+    t = rng.uniform(0, 2 * np.pi, half)
+    r0 = 0.45 + rng.normal(0, 0.06, half)
+    r1 = 1.15 + rng.normal(0, 0.06, half)
+
+    x0 = np.column_stack((r0 * np.cos(t), r0 * np.sin(t)))
+    x1 = np.column_stack((r1 * np.cos(t), r1 * np.sin(t)))
+
+    x = np.vstack((x0, x1))
+    y = np.array([0] * half + [1] * half, dtype=np.int64)
+
+    indices = rng.permutation(n_samples)
+    x, y = x[indices], y[indices]
+
+    # Support input dimensions greater than two
+    if input_dim > 2:
+        extra = rng.normal(
+            0, 0.01, size=(n_samples, input_dim - 2)
+        )
+        x = np.column_stack((x, extra))
+
+    # Initialize weights deterministically
+    np.random.seed(seed)
+
+    def init_fn(in_dim, out_dim):
+        return initialize_weights(in_dim, out_dim, scheme="he")
+
+    # Build the network directly without _fresh_mlp
+    layers = [
+        make_dense(input_dim, 64, init_fn),
+        make_activation("relu"),
+        make_dense(64, 64, init_fn),
+        make_activation("relu"),
+        make_dense(64, num_classes, init_fn),
+    ]
+
+    model = make_sequential(layers)
+
+    # Create the loss function and optimizer
+    loss_fn = make_loss("cross_entropy")
+    optimizer = make_optimizer(
+        model["params"], lr=0.05, kind="sgd"
+    )
+
+    # Train the network
+    train(
+        model, loss_fn, optimizer, x, y,
+        epochs=300, batch_size=32, seed=seed
+    )
+
+    # Calculate actual accuracy
+    logits, _ = model["forward"](x)
+    predictions = np.argmax(logits, axis=1)
+    accuracy = float(np.mean(predictions == y))
+
+    return model, {
+        "accuracy": accuracy,
+        "x": x,
+        "y": y
+    }
 
 # Step 13 - improve_generalization (not yet solved)
 # TODO: implement
